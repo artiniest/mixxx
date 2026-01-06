@@ -130,6 +130,7 @@ WaveformWidgetFactory::WaveformWidgetFactory()
           m_endOfTrackWarningTime(30),
           m_defaultZoom(WaveformWidgetRenderer::s_waveformDefaultZoom),
           m_zoomSync(true),
+          m_visualizeEqGain(true),
           m_overviewNormalized(kOverviewNormalizedDefault),
           m_untilMarkShowBeats(false),
           m_untilMarkShowTime(false),
