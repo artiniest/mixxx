@@ -1,5 +1,10 @@
 #include "qml/qmlwaveformrenderer.h"
 
+#include <qapplication.h>
+#include <qfileinfo.h>
+#include <qglobal.h>
+#include <qlist.h>
+
 #include <memory>
 
 #include "moc_qmlwaveformrenderer.cpp"
@@ -22,9 +27,9 @@ namespace mixxx {
 namespace qml {
 
 QmlWaveformRendererMark::QmlWaveformRendererMark()
-        : m_defaultMark(nullptr),
-          m_untilMark(std::make_unique<QmlWaveformUntilMark>()),
-          m_playMarkerPosition(0.5) {
+        : m_playMarkerPosition(0.5),
+          m_defaultMark(nullptr),
+          m_untilMark(std::make_unique<QmlWaveformUntilMark>()) {
 }
 
 QmlWaveformRendererFactory::Renderer QmlWaveformRendererEndOfTrack::create(
@@ -118,7 +123,7 @@ QmlWaveformRendererFactory::Renderer QmlWaveformRendererRGB::create(
 QmlWaveformRendererFactory::Renderer QmlWaveformRendererFiltered::create(
         WaveformWidgetRenderer* waveformWidget) const {
     auto pRenderer = std::make_unique<allshader::WaveformRendererFiltered>(
-            waveformWidget, m_ignoreStem);
+            waveformWidget, m_ignoreStem, m_options);
 
     setup(pRenderer.get());
     return QmlWaveformRendererFactory::Renderer{pRenderer.get(), std::move(pRenderer)};
@@ -127,7 +132,7 @@ QmlWaveformRendererFactory::Renderer QmlWaveformRendererFiltered::create(
 QmlWaveformRendererFactory::Renderer QmlWaveformRendererHSV::create(
         WaveformWidgetRenderer* waveformWidget) const {
     auto pRenderer = std::make_unique<allshader::WaveformRendererHSV>(
-            waveformWidget);
+            waveformWidget, m_options);
 
     pRenderer->setAxesColor(m_axesColor);
     pRenderer->setColor(m_color);
@@ -170,7 +175,7 @@ QmlWaveformRendererFactory::Renderer QmlWaveformRendererHSV::create(
 QmlWaveformRendererFactory::Renderer QmlWaveformRendererSimple::create(
         WaveformWidgetRenderer* waveformWidget) const {
     auto pRenderer = std::make_unique<allshader::WaveformRendererSimple>(
-            waveformWidget);
+            waveformWidget, m_options);
 
     pRenderer->setAxesColor(m_axesColor);
     pRenderer->setColor(m_color);
@@ -313,14 +318,43 @@ QmlWaveformRendererFactory::Renderer QmlWaveformRendererMark::create(
                 pMark->textColor(),
                 pMark->align(),
                 pMark->text(),
-                pMark->pixmap(),
-                pMark->icon(),
+                pMark->pixmap().toLocalFile(),
+                pMark->icon().toLocalFile(),
                 pMark->color(),
-                priority)));
+                priority,
+                Cue::kNoHotCue,
+                {},
+                pMark->endPixmap().toLocalFile(),
+                pMark->endIcon().toLocalFile(),
+                pMark->disabledOpacity(),
+                pMark->enabledOpacity())));
         priority--;
     }
     const auto* pMark = defaultMark();
     if (pMark != nullptr) {
+        const QString pixmap = pMark->pixmap().toLocalFile();
+        const QString endPixmap = pMark->endPixmap().toLocalFile();
+        const QString icon = pMark->icon().toLocalFile();
+        const QString endIcon = pMark->endIcon().toLocalFile();
+        // FIXME: the following checks should be done on the WaveformMarker
+        // setter (depends of #14515)
+        if (!pixmap.isEmpty() && !QFileInfo::exists(pixmap)) {
+            qmlEngine(this)->throwError(tr("Cannot find the marker pixmap") + " \"" + pixmap + '"');
+        }
+
+        if (!endPixmap.isEmpty() && !QFileInfo::exists(endPixmap)) {
+            qmlEngine(this)->throwError(tr("Cannot find the marker endPixmap") +
+                    " \"" + endPixmap + '"');
+        }
+
+        if (!icon.isEmpty() && !QFileInfo::exists(icon)) {
+            qmlEngine(this)->throwError(tr("Cannot find the marker icon") + " \"" + icon + '"');
+        }
+
+        if (!endIcon.isEmpty() && !QFileInfo::exists(endIcon)) {
+            qmlEngine(this)->throwError(tr("Cannot find the marker endIcon") +
+                    " \"" + endIcon + '"');
+        }
         pRenderer->setDefaultMark(
                 waveformWidget->getGroup(),
                 WaveformMarkSet::DefaultMarkerStyle{
@@ -329,9 +363,13 @@ QmlWaveformRendererFactory::Renderer QmlWaveformRendererMark::create(
                         pMark->textColor(),
                         pMark->align(),
                         pMark->text(),
-                        pMark->pixmap(),
-                        pMark->icon(),
+                        pixmap,
+                        endPixmap,
+                        icon,
+                        endIcon,
                         pMark->color(),
+                        pMark->enabledOpacity(),
+                        pMark->disabledOpacity(),
                 });
     }
     return QmlWaveformRendererFactory::Renderer{pRenderer.get(), std::move(pRenderer)};

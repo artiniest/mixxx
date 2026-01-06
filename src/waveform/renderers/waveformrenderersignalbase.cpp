@@ -12,7 +12,7 @@ const QString kEffectGroupFormat = QStringLiteral("[EqualizerRack1_%1_Effect1]")
 } // namespace
 
 WaveformRendererSignalBase::WaveformRendererSignalBase(
-        WaveformWidgetRenderer* waveformWidgetRenderer)
+        WaveformWidgetRenderer* waveformWidgetRenderer, Options)
         : WaveformRendererAbstract(waveformWidgetRenderer),
           m_pEQEnabled(nullptr),
           m_pLowFilterControlObject(nullptr),
@@ -174,13 +174,12 @@ void WaveformRendererSignalBase::setup(const QDomNode& node,
 }
 
 void WaveformRendererSignalBase::getGains(float* pAllGain,
-        bool applyCompensation,
         float* pLowGain,
         float* pMidGain,
         float* pHighGain) {
     if (pAllGain) {
         *pAllGain = static_cast<CSAMPLE_GAIN>(
-                            m_waveformRenderer->getGain(applyCompensation)) *
+                            m_waveformRenderer->getGain()) *
                 m_allChannelVisualGain;
         ;
     }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <qqmlcontext.h>
+
 #include <QObject>
 #include <QQmlEngine>
 
@@ -85,7 +87,7 @@ class QmlWaveformRendererPreroll
     ::WaveformRendererAbstract::PositionSource m_position{::WaveformRendererAbstract::Play};
 };
 
-typedef allshader::WaveformRendererSignalBase::Options WaveformRendererSignalBaseOptions;
+typedef WaveformRendererSignalBase::Options WaveformRendererSignalBaseOptions;
 class QmlWaveformRendererSignal
         : public QmlWaveformRendererFactory {
     Q_OBJECT
@@ -139,7 +141,7 @@ class QmlWaveformRendererSignal
 
     ::WaveformRendererAbstract::PositionSource m_position{::WaveformRendererAbstract::Play};
     WaveformRendererSignalBaseOptions m_options{
-            allshader::WaveformRendererSignalBase::Option::None};
+            WaveformRendererSignalBase::Option::None};
 };
 
 class QmlWaveformRendererRGB
@@ -175,6 +177,8 @@ class QmlWaveformRendererHSV
     Q_PROPERTY(double gainLow MEMBER m_gainLow NOTIFY gainLowChanged REQUIRED)
     Q_PROPERTY(double gainMid MEMBER m_gainMid NOTIFY gainMidChanged REQUIRED)
     Q_PROPERTY(double gainHigh MEMBER m_gainHigh NOTIFY gainHighChanged REQUIRED)
+    Q_PROPERTY(WaveformRendererSignalBaseOptions options MEMBER
+                    m_options NOTIFY optionsChanged)
     QML_NAMED_ELEMENT(WaveformRendererHSV)
 
   public:
@@ -187,6 +191,11 @@ class QmlWaveformRendererHSV
     void gainLowChanged(double);
     void gainMidChanged(double);
     void gainHighChanged(double);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+    void optionsChanged(WaveformRendererSignalBaseOptions);
+#else
+    void optionsChanged(mixxx::qml::WaveformRendererSignalBaseOptions);
+#endif
 
   private:
     QColor m_axesColor;
@@ -198,6 +207,8 @@ class QmlWaveformRendererHSV
     double m_gainHigh;
 
     bool m_ignoreStem{false};
+    WaveformRendererSignalBaseOptions m_options{
+            WaveformRendererSignalBase::Option::None};
 };
 
 class QmlWaveformRendererSimple
@@ -207,6 +218,8 @@ class QmlWaveformRendererSimple
     Q_PROPERTY(QColor axesColor MEMBER m_axesColor NOTIFY axesColorChanged REQUIRED)
     Q_PROPERTY(QColor color MEMBER m_color NOTIFY colorChanged REQUIRED)
     Q_PROPERTY(double gain MEMBER m_gain NOTIFY gainChanged REQUIRED)
+    Q_PROPERTY(WaveformRendererSignalBaseOptions options MEMBER
+                    m_options NOTIFY optionsChanged)
     QML_NAMED_ELEMENT(WaveformRendererSimple)
 
   public:
@@ -216,12 +229,19 @@ class QmlWaveformRendererSimple
     void colorChanged(const QColor&);
     void ignoreStemChanged(bool);
     void gainChanged(double);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+    void optionsChanged(WaveformRendererSignalBaseOptions);
+#else
+    void optionsChanged(mixxx::qml::WaveformRendererSignalBaseOptions);
+#endif
 
   private:
     QColor m_axesColor;
     QColor m_color;
     double m_gain;
     bool m_ignoreStem{false};
+    WaveformRendererSignalBaseOptions m_options{
+            WaveformRendererSignalBase::Option::None};
 };
 
 class QmlWaveformRendererBeat
@@ -329,8 +349,10 @@ class QmlWaveformMark : public QObject {
     Q_PROPERTY(QString textColor MEMBER m_textColor NOTIFY textColorChanged)
     Q_PROPERTY(QString align MEMBER m_align NOTIFY alignChanged)
     Q_PROPERTY(QString text MEMBER m_text NOTIFY textChanged)
-    Q_PROPERTY(QString pixmap MEMBER m_pixmap NOTIFY pixmapChanged)
-    Q_PROPERTY(QString icon MEMBER m_icon NOTIFY iconChanged)
+    Q_PROPERTY(QUrl pixmap MEMBER m_pixmap NOTIFY pixmapChanged)
+    Q_PROPERTY(QUrl icon MEMBER m_icon NOTIFY iconChanged)
+    Q_PROPERTY(QUrl endPixmap MEMBER m_endPixmap NOTIFY endPixmapChanged)
+    Q_PROPERTY(QUrl endIcon MEMBER m_endIcon NOTIFY endIconChanged)
     QML_NAMED_ELEMENT(WaveformMark)
   public:
     QString control() const {
@@ -351,11 +373,23 @@ class QmlWaveformMark : public QObject {
     QString text() const {
         return m_text;
     }
-    QString pixmap() const {
+    QUrl pixmap() const {
         return m_pixmap;
     }
-    QString icon() const {
+    QUrl icon() const {
         return m_icon;
+    }
+    QUrl endPixmap() const {
+        return m_endPixmap;
+    }
+    QUrl endIcon() const {
+        return m_endIcon;
+    }
+    float disabledOpacity() const {
+        return m_disabledOpacity;
+    }
+    float enabledOpacity() const {
+        return m_enabledOpacity;
     }
 
   signals:
@@ -365,8 +399,12 @@ class QmlWaveformMark : public QObject {
     void textColorChanged(QString textColor);
     void alignChanged(QString align);
     void textChanged(QString text);
-    void pixmapChanged(QString pixmap);
-    void iconChanged(QString icon);
+    void pixmapChanged(QUrl pixmap);
+    void iconChanged(QUrl icon);
+    void endPixmapChanged(QUrl pixmap);
+    void endIconChanged(QUrl icon);
+    void disabledOpacityChanged(float opacity);
+    void enabledOpacityChanged(float opacity);
 
   private:
     QString m_control;
@@ -375,8 +413,12 @@ class QmlWaveformMark : public QObject {
     QString m_textColor;
     QString m_align;
     QString m_text;
-    QString m_pixmap;
-    QString m_icon;
+    QUrl m_pixmap;
+    QUrl m_icon;
+    QUrl m_endPixmap;
+    QUrl m_endIcon;
+    float m_disabledOpacity;
+    float m_enabledOpacity;
 };
 
 class QmlWaveformUntilMark : public QObject {

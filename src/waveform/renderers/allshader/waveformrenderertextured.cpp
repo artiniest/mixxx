@@ -23,7 +23,7 @@ QString WaveformRendererTextured::fragShaderForType(::WaveformWidgetType::Type t
     default:
         break;
     }
-    assert(false);
+    DEBUG_ASSERT(!"unsupported WaveformWidgetType");
     return QString();
 }
 
@@ -31,8 +31,8 @@ WaveformRendererTextured::WaveformRendererTextured(
         WaveformWidgetRenderer* waveformWidget,
         ::WaveformWidgetType::Type t,
         ::WaveformRendererAbstract::PositionSource type,
-        WaveformRendererSignalBase::Options options)
-        : WaveformRendererSignalBase(waveformWidget),
+        ::WaveformRendererSignalBase::Options options)
+        : WaveformRendererSignalBase(waveformWidget, options),
           m_unitQuadListId(-1),
           m_textureId(0),
           m_textureRenderedWaveformCompletion(0),
@@ -327,7 +327,7 @@ void WaveformRendererTextured::paintGL() {
 
     // Per-band gain from the EQ knobs.
     float lowGain(1.0), midGain(1.0), highGain(1.0), allGain(1.0);
-    getGains(&allGain, true, &lowGain, &midGain, &highGain);
+    getGains(&allGain, &lowGain, &midGain, &highGain);
 
     const auto firstVisualIndex = static_cast<GLfloat>(
             m_waveformRenderer->getFirstDisplayedPosition(positionType) * trackSamples /
@@ -380,7 +380,7 @@ void WaveformRendererTextured::paintGL() {
 
         if (m_type == ::WaveformWidgetType::RGB) {
             m_frameShaderProgram->setUniformValue("splitStereoSignal",
-                    m_options & WaveformRendererSignalBase::Option::SplitStereoSignal);
+                    m_options & ::WaveformRendererSignalBase::Option::SplitStereoSignal);
         }
 
         m_frameShaderProgram->setUniformValue("axesColor",
